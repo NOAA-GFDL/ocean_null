@@ -19,6 +19,14 @@ module ocean_types_mod
   type, public ::  ocean_data_type 
      type(domain2d) :: Domain
      real, pointer, dimension(:,:)    :: t_surf, s_surf, sea_lev, frazil, u_surf, v_surf
+     logical, pointer, dimension(:,:) :: maskmap =>NULL()! A pointer to an array indicating which
+                                                         ! logical processors are actually used for
+                                                         ! the ocean code. The other logical
+                                                         ! processors would be all land points and
+                                                         ! are not assigned to actual processors.
+                                                         ! This need not be assigned if all logical
+                                                         ! processors are used. This variable is dummy and need 
+                                                         ! not to be set, but it is needed to pass compilation.
      integer :: avg_kount
      logical :: pe
      integer, dimension(:), pointer :: pelist
