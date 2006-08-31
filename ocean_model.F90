@@ -13,7 +13,7 @@ module ocean_model_mod
   private
   
   character(len=128) :: version = '$Id: ocean_model.F90,v 10.0 2003/10/24 22:01:25 fms Exp $'
-  character (len=128) :: tagname = '$Name: memphis_2006_07 $'
+  character (len=128) :: tagname = '$Name: memphis_2006_08 $'
 
   public ocean_model_init, ocean_model_end , update_ocean_model,            &
          ocean_data_type, ice_ocean_boundary_type, read_ice_ocean_boundary, &
