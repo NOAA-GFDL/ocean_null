@@ -49,7 +49,7 @@ end type ice_ocean_boundary_type
 
 !-----------------------------------------------------------------------
 
-type ocean_data_type
+type ocean_public_type
    type (domain2d)               :: Domain
    type (ocean_grids_type)       :: Global, Data
    real, pointer, dimension(:,:) :: t_surf =>NULL() , &
@@ -63,24 +63,32 @@ type ocean_data_type
    integer, pointer :: pelist(:) =>NULL()
    integer, dimension(3)            :: axes    
    type(coupler_2d_bc_type)         :: fields
-end type ocean_data_type
+end type ocean_public_type
+
+  type, public ::  ocean_state_type; private
+     ! This type is private, and can therefore vary between different ocean models.
+     ! All information entire ocean state may be contained here, although it is not
+     ! necessary that this is implemented with all models.
+     logical       :: is_ocean_pe = .false.       ! .true. on processors that run the ocean model.
+  end type ocean_state_type
 
 !-----------------------------------------------------------------------
 
-   character(len=128) :: version = '$Id: ocean_model.F90,v 14.0 2007/03/15 22:37:05 fms Exp $'
-   character(len=128) :: tagname = '$Name: omsk_2008_03 $'
+   character(len=128) :: version = '$Id: ocean_model.F90,v 16.0 2008/07/30 22:44:26 fms Exp $'
+   character(len=128) :: tagname = '$Name: perth $'
 
 contains
 
 !#######################################################################
 
- subroutine update_ocean_model (Ice_boundary, Ocean,  &
-       ocean_seg_start, ocean_seg_end, num_ocean_calls )
+ subroutine update_ocean_model (Ice_boundary, Ocean, Ocean_sfc, &
+       time_start_update, Ocean_coupling_time_step)
 
  type (ice_ocean_boundary_type), intent(in) :: Ice_boundary
- type (ocean_data_type), intent(inout) :: Ocean
- logical, intent(in), optional :: ocean_seg_start, ocean_seg_end
- integer ,intent(in), optional :: num_ocean_calls
+ type(ocean_state_type),   pointer       :: Ocean_state
+ type (ocean_public_type), intent(inout) :: Ocean
+ type(time_type), intent(in)             :: time_start_update
+ type(time_type), intent(in)             :: Ocean_coupling_time_step
 
  call error_mesg('ocean_model_mod', 'null ocean model should not be executed', FATAL )
 
@@ -88,9 +96,10 @@ contains
 
 !#######################################################################
 
- subroutine ocean_model_init (Ocean, Time_init, Time, Time_step)
+ subroutine ocean_model_init (Ocean, Ocean_state, Time_init, Time)
 
- type (ocean_data_type), intent(inout) :: Ocean
+ type (ocean_public_type), intent(inout) :: Ocean
+ type(ocean_state_type),      pointer    :: Ocean_state
  type (time_type), intent(in) :: Time_init, Time, Time_step
 
  call error_mesg('ocean_model_mod', 'null ocean model should not be executed', FATAL )
@@ -99,16 +108,18 @@ contains
 
 !#######################################################################
 
-  subroutine ocean_model_end (Ocean)
+  subroutine ocean_model_end (Ocean, Ocean_state, Time_in)
 
-  type(ocean_data_type), intent(in) :: Ocean
+  type(ocean_state_type),            pointer    :: Ocean_state
+  type(time_type),                   intent(in) :: Time_in
+  type(ocean_public_type), optional, intent(in) :: Ocean
 
   end subroutine ocean_model_end
 
 !#######################################################################
-  subroutine ocean_model_init_sfc(Ocean)
-
-  type(ocean_data_type), intent(in) :: Ocean
+  subroutine ocean_model_init_sfc(Ocean_state, Ocean)
+  type(ocean_state_type),  pointer    :: Ocean_state    
+  type(ocean_public_type), intent(in) :: Ocean
 
   call error_mesg('ocean_model_mod', 'null ocean model should not be executed', FATAL )
 
@@ -124,7 +135,7 @@ contains
 
   character(LEN=*),             intent(IN)    :: file_name  
   type(ice_ocean_boundary_type),intent(INOUT) :: iob
-  type(ocean_data_type),        intent(IN)    :: Ocean
+  type(ocean_public_type),        intent(IN)    :: Ocean
 
   call error_mesg('ocean_model_mod', 'null ocean model should not be executed', FATAL )
 
@@ -134,7 +145,7 @@ contains
 
   character(LEN=*),             intent(IN) :: file_name  
   type(ice_ocean_boundary_type),intent(IN) :: iob
-  type(ocean_data_type),        intent(IN) :: Ocean
+  type(ocean_public_type),        intent(IN) :: Ocean
 
   call error_mesg('ocean_model_mod', 'null ocean model should not be executed', FATAL )
 
@@ -148,8 +159,8 @@ contains
 
   end subroutine init_default_ice_ocean_boundary
 !#######################################################################
-  subroutine ocean_stock_pe(Ocean, index, value, time_index)
-  type(ocean_data_type), intent(in)  :: Ocean
+  subroutine ocean_stock_pe(Ocean_state, index, value, time_index)
+  type(ocean_state_type), intent(in) :: Ocean_state
   integer,               intent(in)  :: index
   real,                  intent(out) :: value
   integer, optional,     intent(in)  :: time_index
