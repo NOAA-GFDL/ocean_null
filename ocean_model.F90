@@ -12,7 +12,7 @@ private
 public :: ocean_model_init, ocean_model_end, update_ocean_model, ocean_data_type, &
           ice_ocean_boundary_type, ocean_grids_type, read_ice_ocean_boundary, &
           write_ice_ocean_boundary, init_default_ice_ocean_boundary, &
-          ocean_model_flux_init, ocean_model_init_sfc, ocean_stock_pe
+          ocean_model_flux_init, ocean_model_init_sfc, ocean_stock_pe, ocean_model_restart
 
 !-----------------------------------------------------------------------
 
@@ -74,8 +74,8 @@ end type ocean_public_type
 
 !-----------------------------------------------------------------------
 
-   character(len=128) :: version = '$Id: ocean_model.F90,v 16.0 2008/07/30 22:44:26 fms Exp $'
-   character(len=128) :: tagname = '$Name: perth $'
+   character(len=128) :: version = '$Id: ocean_model.F90,v 16.0.2.1 2008/09/05 13:10:35 z1l Exp $'
+   character(len=128) :: tagname = '$Name: perth_2008_10 $'
 
 contains
 
@@ -115,6 +115,26 @@ contains
   type(ocean_public_type), optional, intent(in) :: Ocean
 
   end subroutine ocean_model_end
+
+!#######################################################################
+! <SUBROUTINE NAME="ocean_model_restart">
+!
+! <DESCRIPTION>
+! dummy interface.
+! Arguments: 
+!   timestamp (optional, intent(in)) : A character string that represents the model time, 
+!                                      used for writing restart. timestamp will append to
+!                                      the any restart file name as a prefix. 
+! </DESCRIPTION>
+!
+  subroutine ocean_model_restart(Ocean_state, timestamp)
+     type(ocean_state_type),    pointer     :: Ocean_state
+     character(len=*), intent(in), optional :: timestamp
+
+     ! dummy routine
+
+  end subroutine ocean_model_restart
+! </SUBROUTINE> NAME="ocean_model_restart"
 
 !#######################################################################
   subroutine ocean_model_init_sfc(Ocean_state, Ocean)
