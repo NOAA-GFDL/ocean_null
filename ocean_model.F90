@@ -14,6 +14,12 @@ public :: ocean_model_init, ocean_model_end, update_ocean_model, ocean_data_type
           write_ice_ocean_boundary, init_default_ice_ocean_boundary, &
           ocean_model_flux_init, ocean_model_init_sfc, ocean_stock_pe, ocean_model_restart
 
+public    ocean_model_data_get
+interface ocean_model_data_get
+   module procedure ocean_model_data1D_get 
+   module procedure ocean_model_data2D_get 
+end interface
+
 !-----------------------------------------------------------------------
 
 type ice_ocean_boundary_type
@@ -33,6 +39,8 @@ type ice_ocean_boundary_type
                                    fprec  =>NULL()
   real, dimension(:,:), pointer :: runoff =>NULL(), &
                                    calving  =>NULL()
+  real, pointer, dimension(:,:) :: runoff_hflx     =>NULL() ! heat flux of liquid runoff (kg/m2/s) 
+  real, pointer, dimension(:,:) :: calving_hflx    =>NULL() ! heat flux of frozen runoff (kg/m2/s) 
   real, dimension(:,:), pointer :: p  =>NULL()
   real, dimension(:,:,:), pointer :: data  =>NULL()
   integer :: xtype
@@ -57,6 +65,7 @@ type ocean_public_type
                                     u_surf =>NULL() , &
                                     v_surf =>NULL() , &
                                     s_surf =>NULL() , &
+                                    area   =>NULL() , &
                                     sea_lev=>NULL()
    logical, pointer, dimension(:,:) :: maskmap =>NULL()
    logical :: pe
@@ -74,8 +83,8 @@ end type ocean_public_type
 
 !-----------------------------------------------------------------------
 
-   character(len=128) :: version = '$Id: ocean_model.F90,v 16.0.2.1 2008/09/05 13:10:35 z1l Exp $'
-   character(len=128) :: tagname = '$Name: perth_2008_10 $'
+   character(len=128) :: version = '$Id: ocean_model.F90,v 17.0 2009/07/21 03:17:55 fms Exp $'
+   character(len=128) :: tagname = '$Name: quebec $'
 
 contains
 
@@ -189,5 +198,26 @@ contains
 
   end subroutine ocean_stock_pe
 !#######################################################################
+
+subroutine ocean_model_data2D_get(OS,Ocean, name, array2D,isc,jsc)
+  type(ocean_state_type),     pointer    :: OS
+  type(ocean_public_type),    intent(in) :: Ocean
+  character(len=*)          , intent(in) :: name
+  real, dimension(isc:,jsc:), intent(out):: array2D
+  integer                   , intent(in) :: isc,jsc
+  
+  array2D(isc:,jsc:) = 0.0
+  
+end subroutine ocean_model_data2D_get
+
+subroutine ocean_model_data1D_get(OS,Ocean, name, value)
+  type(ocean_state_type),     pointer    :: OS
+  type(ocean_public_type),    intent(in) :: Ocean
+  character(len=*)          , intent(in) :: name
+  real                      , intent(out):: value
+
+  value = 0.0
+
+end subroutine ocean_model_data1D_get
 
 end module ocean_model_mod
