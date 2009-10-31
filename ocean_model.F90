@@ -84,7 +84,7 @@ end type ocean_public_type
 !-----------------------------------------------------------------------
 
    character(len=128) :: version = '$Id: ocean_model.F90,v 17.0 2009/07/21 03:17:55 fms Exp $'
-   character(len=128) :: tagname = '$Name: quebec $'
+   character(len=128) :: tagname = '$Name: quebec_200910 $'
 
 contains
 
