@@ -20,7 +20,8 @@ private
 public :: ocean_model_init, ocean_model_end, update_ocean_model, &
           ice_ocean_boundary_type, ocean_grids_type, &
           ocean_model_flux_init, ocean_model_init_sfc, &
-          ocean_stock_pe, ocean_model_restart
+          ocean_stock_pe, ocean_model_restart, &
+          ice_ocn_bnd_type_chksum, ocean_public_type_chksum
 
 public    ocean_model_data_get
 interface ocean_model_data_get
@@ -90,8 +91,8 @@ end type ocean_public_type
 
 !-----------------------------------------------------------------------
 
-   character(len=128) :: version = '$Id: ocean_model.F90,v 18.0 2010/03/02 23:54:27 fms Exp $'
-   character(len=128) :: tagname = '$Name: riga_201006 $'
+   character(len=128) :: version = '$Id: ocean_model.F90,v 18.0.2.1 2010/09/07 18:44:36 pjp Exp $'
+   character(len=128) :: tagname = '$Name: riga_201012 $'
 
 contains
 
@@ -339,6 +340,7 @@ subroutine ocean_model_data2D_get(OS,Ocean, name, array2D,isc,jsc)
   array2D(isc:,jsc:) = 0.0
   
 end subroutine ocean_model_data2D_get
+!#######################################################################
 
 subroutine ocean_model_data1D_get(OS,Ocean, name, value)
   type(ocean_state_type),     pointer    :: OS
@@ -349,5 +351,24 @@ subroutine ocean_model_data1D_get(OS,Ocean, name, value)
   value = 0.0
 
 end subroutine ocean_model_data1D_get
+!#######################################################################
+
+subroutine ice_ocn_bnd_type_chksum(id, timestep, Ice_ocean_boundary)
+
+    character(len=*), intent(in) :: id
+    integer         , intent(in) :: timestep
+    type(ice_ocean_boundary_type), intent(in) :: Ice_ocean_boundary
+    return
+end subroutine ice_ocn_bnd_type_chksum
+!#######################################################################
+
+subroutine ocean_public_type_chksum(id, timestep, Ocean)
+
+    character(len=*), intent(in) :: id
+    integer         , intent(in) :: timestep
+    type(ocean_public_type), intent(in) :: Ocean
+    return
+end subroutine ocean_public_type_chksum
+!#######################################################################
 
 end module ocean_model_mod
