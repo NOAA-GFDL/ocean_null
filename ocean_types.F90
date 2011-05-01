@@ -12,8 +12,6 @@ module ocean_types_mod
 
   private
 
-#else
-
   ! for communication with FMS coupler
 
   type, public ::  ocean_data_type 
