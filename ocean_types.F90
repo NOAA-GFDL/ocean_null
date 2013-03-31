@@ -34,7 +34,7 @@ module ocean_types_mod
      real, dimension(:,:), pointer :: u_flux, v_flux, t_flux, q_flux, salt_flux, lw_flux, sw_flux, lprec, fprec
      real, dimension(:,:), pointer :: sw_flux_vis, sw_flux_vis_dir, sw_flux_vis_dif, sw_flux_dir, sw_flux_dif
      real, dimension(:,:), pointer :: runoff, calving
-     real, dimension(:,:), pointer :: p
+     real, dimension(:,:), pointer :: p, mi
      real, dimension(:,:,:), pointer :: data !collective field for "named" fields above
      integer :: xtype             !REGRID, REDIST or DIRECT
   end type ice_ocean_boundary_type

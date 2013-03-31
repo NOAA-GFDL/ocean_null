@@ -50,6 +50,7 @@ type ice_ocean_boundary_type
   real, pointer, dimension(:,:) :: runoff_hflx     =>NULL() ! heat flux of liquid runoff (kg/m2/s) 
   real, pointer, dimension(:,:) :: calving_hflx    =>NULL() ! heat flux of frozen runoff (kg/m2/s) 
   real, dimension(:,:), pointer :: p  =>NULL()
+  real, dimension(:,:), pointer :: mi =>NULL()
   real, dimension(:,:,:), pointer :: data  =>NULL()
   integer :: xtype
   type(coupler_2d_bc_type)      :: fluxes
@@ -91,8 +92,8 @@ end type ocean_public_type
 
 !-----------------------------------------------------------------------
 
-   character(len=128) :: version = '$Id: ocean_model.F90,v 19.0 2012/01/06 21:52:55 fms Exp $'
-   character(len=128) :: tagname = '$Name: siena_201211 $'
+   character(len=128) :: version = '$Id: ocean_model.F90,v 19.0.4.1 2013/02/01 19:35:44 Peter.Phillipps Exp $'
+   character(len=128) :: tagname = '$Name: siena_201303 $'
 
 contains
 
