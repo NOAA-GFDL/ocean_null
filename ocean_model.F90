@@ -52,7 +52,7 @@ type ice_ocean_boundary_type
   real, dimension(:,:), pointer :: p  =>NULL()
   real, dimension(:,:), pointer :: mi =>NULL()
   real, dimension(:,:,:), pointer :: data  =>NULL()
-  integer :: xtype
+  integer :: xtype, wind_stagger
   type(coupler_2d_bc_type)      :: fluxes
 end type ice_ocean_boundary_type
 
@@ -79,8 +79,10 @@ type, public :: ocean_public_type
    logical, pointer, dimension(:,:) :: maskmap =>NULL()
    logical :: is_ocean_pe = .false.
    integer, pointer :: pelist(:) =>NULL()
+   integer                          :: avg_kount
    integer, dimension(3)            :: axes    
    type(coupler_2d_bc_type)         :: fields
+   integer                          :: stagger = -999
 end type ocean_public_type
 
   type, public ::  ocean_state_type; private
@@ -92,8 +94,8 @@ end type ocean_public_type
 
 !-----------------------------------------------------------------------
 
-   character(len=128) :: version = '$Id: ocean_model.F90,v 20.0 2013/12/14 00:17:39 fms Exp $'
-   character(len=128) :: tagname = '$Name: tikal_201409 $'
+   character(len=128) :: version = '$Id: ocean_model.F90,v 21.0 2014/12/15 22:11:25 fms Exp $'
+   character(len=128) :: tagname = '$Name: ulm $'
 
 contains
 
