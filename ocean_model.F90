@@ -94,8 +94,8 @@ end type ocean_public_type
 
 !-----------------------------------------------------------------------
 
-   character(len=128) :: version = '$Id: ocean_model.F90,v 21.0 2014/12/15 22:11:25 fms Exp $'
-   character(len=128) :: tagname = '$Name: ulm $'
+   character(len=128) :: version = '$Id: ocean_model.F90,v 20.0.2.1 2014/11/14 19:41:50 Peter.Phillipps Exp $'
+   character(len=128) :: tagname = '$Name: ulm_201505 $'
 
 contains
 
