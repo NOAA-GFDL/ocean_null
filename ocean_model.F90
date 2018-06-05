@@ -125,7 +125,7 @@ contains
 !#######################################################################
 
  subroutine update_ocean_model (Ice_boundary, Ocean_state, Ocean_sfc, &
-       time_start_update, Ocean_coupling_time_step update_dyn, update_thermo, &
+       time_start_update, Ocean_coupling_time_step, update_dyn, update_thermo, &
        Ocn_fluxes_used)
 
  type(ice_ocean_boundary_type), intent(in)    :: Ice_boundary
