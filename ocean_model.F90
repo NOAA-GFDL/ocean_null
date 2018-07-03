@@ -125,13 +125,24 @@ contains
 !#######################################################################
 
  subroutine update_ocean_model (Ice_boundary, Ocean_state, Ocean_sfc, &
-       time_start_update, Ocean_coupling_time_step)
+       time_start_update, Ocean_coupling_time_step, update_dyn, update_thermo, &
+       Ocn_fluxes_used)
 
  type(ice_ocean_boundary_type), intent(in)    :: Ice_boundary
  type(ocean_state_type),        pointer       :: Ocean_state
  type(ocean_public_type),       intent(inout) :: Ocean_sfc
  type(time_type), intent(in)                  :: time_start_update
  type(time_type), intent(in)                  :: Ocean_coupling_time_step
+ logical, optional, intent(in)    :: update_dyn !< If present and false,
+                                     !! do not do updates due to the ocean dynamics.
+                                     !! This is a dummy argument for MOM6 compatibility
+ logical, optional, intent(in)    :: update_thermo !< If present and false, do not do updates
+                                                 !! due to the ocean thermodynamics or remapping.
+                                                 !! This is a dummy argument for MOM6 compatibility
+ logical, optional, intent(in)    :: Ocn_fluxes_used !< If present, this indicates whether the
+                                              !! cumulative thermodynamic fluxes from the ocean,
+                                              !! This is a dummy argument for MOM6 compatibility
+!! like frazil, have been used and should be reset.
 
  call error_mesg('ocean_model_mod', 'null ocean model should not be executed', FATAL )
 
