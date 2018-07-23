@@ -67,6 +67,7 @@ type ice_ocean_boundary_type
                                    fprec  =>NULL()
   real, dimension(:,:), pointer :: runoff =>NULL(), &
                                    calving  =>NULL(), &
+                                   stress_mag =>NULL(), &
                                    ustar_berg =>NULL(), &
                                    area_berg =>NULL(), &
                                    mass_berg =>NULL()
