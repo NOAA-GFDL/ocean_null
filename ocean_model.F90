@@ -351,7 +351,7 @@ contains
   end subroutine ocean_model_init_sfc
 !#######################################################################
   subroutine ocean_model_flux_init(Ocean_state)
-  type(ocean_state_type), pointer :: Ocean_state
+  type(ocean_state_type),pointer,optional :: Ocean_state
 
  
 
