@@ -156,6 +156,12 @@ contains
  type(ocean_public_type), intent(inout) :: Ocean
  type(ocean_state_type),  pointer       :: Ocean_state
  type(time_type), intent(in) :: Time_init, Time
+ type(coupler_1d_bc_type), &
+             optional, intent(in)    :: gas_fields_ocn !< If present, this type describes the
+                                              !! ocean and surface-ice fields that will participate
+                                              !! in the calculation of additional gas or other
+                                              !! tracer fluxes, and can be used to spawn related
+                                              !! internal variables in the ice model.
 
  real,    allocatable, dimension(:)     :: xgrid_area
  real,    allocatable, dimension(:,:)   :: geo_lonv, geo_latv, rmask, geo_lont, geo_latt, tmpx, tmpy, garea
