@@ -27,7 +27,7 @@ use           fms_mod, only: field_size, field_exist, get_mosaic_tile_grid
 
 use  time_manager_mod, only: time_type
 
-use coupler_types_mod, only: coupler_2d_bc_type
+use coupler_types_mod, only: coupler_1d_bc_type, coupler_2d_bc_type
 
 use        mosaic_mod, only: get_mosaic_ntiles, get_mosaic_grid_sizes, get_mosaic_xgrid
 use        mosaic_mod, only: get_mosaic_xgrid_size, calc_mosaic_grid_area
@@ -67,6 +67,7 @@ type ice_ocean_boundary_type
                                    fprec  =>NULL()
   real, dimension(:,:), pointer :: runoff =>NULL(), &
                                    calving  =>NULL(), &
+                                   stress_mag =>NULL(), &
                                    ustar_berg =>NULL(), &
                                    area_berg =>NULL(), &
                                    mass_berg =>NULL()
@@ -125,13 +126,24 @@ contains
 !#######################################################################
 
  subroutine update_ocean_model (Ice_boundary, Ocean_state, Ocean_sfc, &
-       time_start_update, Ocean_coupling_time_step)
+       time_start_update, Ocean_coupling_time_step, update_dyn, update_thermo, &
+       Ocn_fluxes_used)
 
  type(ice_ocean_boundary_type), intent(in)    :: Ice_boundary
  type(ocean_state_type),        pointer       :: Ocean_state
  type(ocean_public_type),       intent(inout) :: Ocean_sfc
  type(time_type), intent(in)                  :: time_start_update
  type(time_type), intent(in)                  :: Ocean_coupling_time_step
+ logical, optional, intent(in)    :: update_dyn !< If present and false,
+                                     !! do not do updates due to the ocean dynamics.
+                                     !! This is a dummy argument for MOM6 compatibility
+ logical, optional, intent(in)    :: update_thermo !< If present and false, do not do updates
+                                                 !! due to the ocean thermodynamics or remapping.
+                                                 !! This is a dummy argument for MOM6 compatibility
+ logical, optional, intent(in)    :: Ocn_fluxes_used !< If present, this indicates whether the
+                                              !! cumulative thermodynamic fluxes from the ocean,
+                                              !! This is a dummy argument for MOM6 compatibility
+!! like frazil, have been used and should be reset.
 
  call error_mesg('ocean_model_mod', 'null ocean model should not be executed', FATAL )
 
@@ -139,11 +151,17 @@ contains
 
 !#######################################################################
 
- subroutine ocean_model_init (Ocean, Ocean_state, Time_init, Time)
+ subroutine ocean_model_init (Ocean, Ocean_state, Time_init, Time, gas_fields_ocn)
 
  type(ocean_public_type), intent(inout) :: Ocean
  type(ocean_state_type),  pointer       :: Ocean_state
  type(time_type), intent(in) :: Time_init, Time
+ type(coupler_1d_bc_type), &
+             optional, intent(in)    :: gas_fields_ocn !< If present, this type describes the
+                                              !! ocean and surface-ice fields that will participate
+                                              !! in the calculation of additional gas or other
+                                              !! tracer fluxes, and can be used to spawn related
+                                              !! internal variables in the ice model.
 
  real,    allocatable, dimension(:)     :: xgrid_area
  real,    allocatable, dimension(:,:)   :: geo_lonv, geo_latv, rmask, geo_lont, geo_latt, tmpx, tmpy, garea
@@ -339,7 +357,7 @@ contains
   end subroutine ocean_model_init_sfc
 !#######################################################################
   subroutine ocean_model_flux_init(Ocean_state)
-  type(ocean_state_type), pointer :: Ocean_state
+  type(ocean_state_type),pointer,optional :: Ocean_state
 
  
 
