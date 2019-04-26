@@ -23,11 +23,11 @@ module ocean_model_mod
 use   mpp_domains_mod, only: domain2d, mpp_define_layout, mpp_define_domains, mpp_get_compute_domain
 
 use           fms_mod, only: error_mesg, FATAL, write_version_number, mpp_npes, read_data
-use           fms_mod, only: field_size, field_exist, get_mosaic_tile_grid
+use           fms_mod, only: field_size, field_exist, get_mosaic_tile_grid, set_domain
 
 use  time_manager_mod, only: time_type
 
-use coupler_types_mod, only: coupler_2d_bc_type
+use coupler_types_mod, only: coupler_1d_bc_type, coupler_2d_bc_type
 
 use        mosaic_mod, only: get_mosaic_ntiles, get_mosaic_grid_sizes, get_mosaic_xgrid
 use        mosaic_mod, only: get_mosaic_xgrid_size, calc_mosaic_grid_area
@@ -45,8 +45,8 @@ public :: ocean_model_init, ocean_model_end, update_ocean_model, &
 
 public    ocean_model_data_get
 interface ocean_model_data_get
-   module procedure ocean_model_data1D_get 
-   module procedure ocean_model_data2D_get 
+   module procedure ocean_model_data1D_get
+   module procedure ocean_model_data2D_get
 end interface
 
 !-----------------------------------------------------------------------
@@ -70,8 +70,8 @@ type ice_ocean_boundary_type
                                    ustar_berg =>NULL(), &
                                    area_berg =>NULL(), &
                                    mass_berg =>NULL()
-  real, pointer, dimension(:,:) :: runoff_hflx     =>NULL() ! heat flux of liquid runoff (kg/m2/s) 
-  real, pointer, dimension(:,:) :: calving_hflx    =>NULL() ! heat flux of frozen runoff (kg/m2/s) 
+  real, pointer, dimension(:,:) :: runoff_hflx     =>NULL() ! heat flux of liquid runoff (kg/m2/s)
+  real, pointer, dimension(:,:) :: calving_hflx    =>NULL() ! heat flux of frozen runoff (kg/m2/s)
   real, dimension(:,:), pointer :: p  =>NULL()
   real, dimension(:,:), pointer :: mi =>NULL()
   real, dimension(:,:,:), pointer :: data  =>NULL()
@@ -103,7 +103,7 @@ type, public :: ocean_public_type
    logical :: is_ocean_pe = .false.
    integer, pointer :: pelist(:) =>NULL()
    integer                          :: avg_kount
-   integer, dimension(3)            :: axes    
+   integer, dimension(3)            :: axes
    type(coupler_2d_bc_type)         :: fields
    integer                          :: stagger = -999
 end type ocean_public_type
@@ -139,11 +139,12 @@ contains
 
 !#######################################################################
 
- subroutine ocean_model_init (Ocean, Ocean_state, Time_init, Time)
+ subroutine ocean_model_init (Ocean, Ocean_state, Time_init, Time, gas_fields_ocn)
 
  type(ocean_public_type), intent(inout) :: Ocean
  type(ocean_state_type),  pointer       :: Ocean_state
  type(time_type), intent(in) :: Time_init, Time
+ type(coupler_1d_bc_type), optional, intent(in) :: gas_fields_ocn !< Needed for MOM6 APIs
 
  real,    allocatable, dimension(:)     :: xgrid_area
  real,    allocatable, dimension(:,:)   :: geo_lonv, geo_latv, rmask, geo_lont, geo_latt, tmpx, tmpy, garea
@@ -193,6 +194,7 @@ contains
     layout = (/0,0/)
     call mpp_define_layout( (/1,nlon,1,nlat/), mpp_npes(), layout)
     call mpp_define_domains ( (/1,nlon,1,nlat/), layout, Ocean%Domain, name='NULL Ocean')
+    call set_domain(Ocean%Domain)
 
     select case (grid_version)
     case(0)
@@ -314,10 +316,10 @@ contains
 !
 ! <DESCRIPTION>
 ! dummy interface.
-! Arguments: 
-!   timestamp (optional, intent(in)) : A character string that represents the model time, 
+! Arguments:
+!   timestamp (optional, intent(in)) : A character string that represents the model time,
 !                                      used for writing restart. timestamp will append to
-!                                      the any restart file name as a prefix. 
+!                                      the any restart file name as a prefix.
 ! </DESCRIPTION>
 !
   subroutine ocean_model_restart(Ocean_state, timestamp)
@@ -331,17 +333,17 @@ contains
 
 !#######################################################################
   subroutine ocean_model_init_sfc(Ocean_state, Ocean)
-  type(ocean_state_type),  pointer    :: Ocean_state    
+  type(ocean_state_type),  pointer    :: Ocean_state
   type(ocean_public_type), intent(in) :: Ocean
 
-  
+
 
   end subroutine ocean_model_init_sfc
 !#######################################################################
   subroutine ocean_model_flux_init(Ocean_state)
-  type(ocean_state_type), pointer :: Ocean_state
+  type(ocean_state_type), optional, pointer :: Ocean_state
 
- 
+
 
   end subroutine ocean_model_flux_init
 !#######################################################################
@@ -362,9 +364,9 @@ subroutine ocean_model_data2D_get(OS,Ocean, name, array2D,isc,jsc)
   character(len=*)          , intent(in) :: name
   real, dimension(isc:,jsc:), intent(out):: array2D
   integer                   , intent(in) :: isc,jsc
-  
+
   array2D(isc:,jsc:) = 0.0
-  
+
 end subroutine ocean_model_data2D_get
 !#######################################################################
 
