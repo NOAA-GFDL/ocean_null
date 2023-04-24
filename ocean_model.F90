@@ -22,15 +22,18 @@ module ocean_model_mod
 
 use   mpp_domains_mod, only: domain2d, mpp_define_layout, mpp_define_domains, mpp_get_compute_domain
 
-use           fms_mod, only: error_mesg, FATAL, write_version_number, mpp_npes, read_data
-use           fms_mod, only: field_size, field_exist, get_mosaic_tile_grid, set_domain
+use           fms_mod, only: error_mesg, FATAL, write_version_number, mpp_npes
+
+use           mpp_mod, only: mpp_error, mpp_npes, mpp_get_current_pelist
+use       fms2_io_mod, only: open_file, FmsNetcdfFile_t, get_variable_size, variable_exists
+use       fms2_io_mod, only: read_data, close_file
 
 use  time_manager_mod, only: time_type
 
 use coupler_types_mod, only: coupler_1d_bc_type, coupler_2d_bc_type
 
-use        mosaic_mod, only: get_mosaic_ntiles, get_mosaic_grid_sizes, get_mosaic_xgrid
-use        mosaic_mod, only: get_mosaic_xgrid_size, calc_mosaic_grid_area
+use       mosaic2_mod, only: get_mosaic_ntiles, get_mosaic_grid_sizes, get_mosaic_xgrid
+use       mosaic2_mod, only: get_mosaic_xgrid_size, calc_mosaic_grid_area, get_mosaic_tile_grid
 
 use     constants_mod, only: PI, RADIUS
 
@@ -172,27 +175,44 @@ contains
  integer                                :: layout(2), siz(4), nx(1), ny(1)
  character(len=256)                     :: grid_file = "INPUT/grid_spec.nc"
  character(len=256)                     :: ocean_mosaic, tile_file, ocn_mosaic_file, axo_file
+ type(FmsNetcdfFile_t)                  :: grid_fileobj !< Fms2_io fileobj
+ type(FmsNetcdfFile_t)                  :: ocean_mosaic_fileobj !< Fms2_io fileobj
+ type(FmsNetcdfFile_t)                  :: tile_fileobj !< Fms2_io fileobj
+ type(FmsNetcdfFile_t)                  :: axo_fileobj !< Fms2_io_fileobj
+ integer, dimension(:), allocatable     :: pes !> Current pelist
+
+ !> Open the grid_file with pelist argument so that only one pes open/reads the file
+ allocate(pes(mpp_npes()))
+ call mpp_get_current_pelist(pes)
+
+ if ( .not. open_file(grid_fileobj, grid_file, "read", pelist=pes)) then
+     call mpp_error(FATAL, 'ocean_model_init: error opening '//trim(grid_file))
+ endif
 
  call write_version_number(version, tagname)
 
-
-    if(field_exist(grid_file, 'geolon_t')) then
+    if(variable_exists(grid_fileobj, 'geolon_t')) then
        grid_version = 0
-       call field_size( grid_file, 'geolon_t', siz)
+       call get_variable_size(grid_fileobj, 'geolon_t', siz(1:2))
        nlon = siz(1)
        nlat = siz(2)
-    else if(field_exist(grid_file, 'x_T')) then
+    else if(variable_exists(grid_fileobj, 'x_T')) then
        grid_version = 1
-       call field_size( grid_file, 'x_T', siz)
+       call get_variable_size(grid_fileobj, 'x_T', siz(1:2))
        nlon = siz(1)
        nlat = siz(2)
-    else if(field_exist(grid_file, 'ocn_mosaic_file') ) then ! read from mosaic file
+    else if(variable_exists(grid_fileobj, 'ocn_mosaic_file') ) then ! read from mosaic file
        grid_version = 2
-       call read_data(grid_file, "ocn_mosaic_file", ocean_mosaic)
+       call read_data(grid_fileobj, "ocn_mosaic_file", ocean_mosaic)
        ocean_mosaic = "INPUT/"//trim(ocean_mosaic)
-       ntiles = get_mosaic_ntiles(ocean_mosaic)
+
+       if ( .not. open_file(ocean_mosaic_fileobj, ocean_mosaic, "read", pelist=pes)) then
+          call mpp_error(FATAL, 'ocean_model_init: error opening '//trim(ocean_mosaic))
+       endif
+
+       ntiles = get_mosaic_ntiles(ocean_mosaic_fileobj)
        if(ntiles .NE. 1) call error_mesg('ocean_model_init', ' ntiles should be 1 for ocean mosaic, contact developer', FATAL)
-       call get_mosaic_grid_sizes( ocean_mosaic, nx, ny)
+       call get_mosaic_grid_sizes( ocean_mosaic_fileobj, nx, ny)
        nlon = nx(1)
        nlat = ny(1)
     else
@@ -211,21 +231,20 @@ contains
     layout = (/0,0/)
     call mpp_define_layout( (/1,nlon,1,nlat/), mpp_npes(), layout)
     call mpp_define_domains ( (/1,nlon,1,nlat/), layout, Ocean%Domain, name='NULL Ocean')
-    call set_domain(Ocean%Domain)
 
     select case (grid_version)
     case(0)
-       call read_data(grid_file, "geolon_t",      geo_lont, no_domain=.TRUE. )
-       call read_data(grid_file, "geolat_t",      geo_latt, no_domain=.TRUE. )
-       call read_data(grid_file, "geolon_vert_t", geo_lonv, no_domain=.TRUE. )
-       call read_data(grid_file, "geolat_vert_t", geo_latv, no_domain=.TRUE. )
-       call read_data(grid_file, "wet",      rmask,     no_domain=.TRUE.)
+       call read_data(grid_fileobj, "geolon_t",      geo_lont)
+       call read_data(grid_fileobj, "geolat_t",      geo_latt)
+       call read_data(grid_fileobj, "geolon_vert_t", geo_lonv)
+       call read_data(grid_fileobj, "geolat_vert_t", geo_latv)
+       call read_data(grid_fileobj, "wet",      rmask)
     case(1)
        allocate (x_vert_t(nlon,nlat,4), y_vert_t(nlon,nlat,4) )
-       call read_data(grid_file, "x_T", geo_lont, no_domain=.TRUE. )
-       call read_data(grid_file, "y_T", geo_latt, no_domain=.TRUE. )
-       call read_data(grid_file, "x_vert_T", x_vert_t, no_domain=.TRUE.)
-       call read_data(grid_file, "y_vert_T", y_vert_t, no_domain=.TRUE. )
+       call read_data(grid_fileobj, "x_T", geo_lont)
+       call read_data(grid_fileobj, "y_T", geo_latt)
+       call read_data(grid_fileobj, "x_vert_T", x_vert_t)
+       call read_data(grid_fileobj, "y_vert_T", y_vert_t)
        geo_lonv(1:nlon,1:nlat) = x_vert_t(1:nlon,1:nlat,1)
        geo_lonv(nlon+1,1:nlat) = x_vert_t(nlon,1:nlat,2)
        geo_lonv(1:nlon,nlat+1) = x_vert_t(1:nlon,nlat,4)
@@ -235,13 +254,22 @@ contains
        geo_latv(1:nlon,nlat+1) = y_vert_t(1:nlon,nlat,4)
        geo_latv(nlon+1,nlat+1) = y_vert_t(nlon,nlat,3)
        deallocate(x_vert_t, y_vert_t)
-       call read_data(grid_file, "wet",      rmask,     no_domain=.TRUE.)
+       call read_data(grid_fileobj, "wet",      rmask)
     case(2)
-       call get_mosaic_tile_grid(tile_file, ocean_mosaic, Ocean%Domain )
+       call get_mosaic_tile_grid(tile_file, ocean_mosaic_fileobj, Ocean%Domain )
+       call close_file(ocean_mosaic_fileobj)
+
        allocate(tmpx(2*nlon+1, 2*nlat+1), tmpy(2*nlon+1, 2*nlat+1) )
        allocate(garea(nlon, nlat))
-       call read_data(tile_file, "x", tmpx, no_domain=.TRUE.)
-       call read_data(tile_file, "y", tmpy, no_domain=.TRUE.)
+
+       if ( .not. open_file(tile_fileobj, tile_file, "read")) then
+          call mpp_error(FATAL, 'ocean_model_init: error opening '//trim(tile_file))
+       endif
+
+       call read_data(tile_fileobj, "x", tmpx)
+       call read_data(tile_fileobj, "y", tmpy)
+       call close_file(tile_fileobj)
+
        do j = 1, nlat
           do i = 1, nlon
              geo_lont(i,j) = tmpx(i*2,j*2)
@@ -257,19 +285,24 @@ contains
 
        call calc_mosaic_grid_area(geo_lonv*pi/180., geo_latv*pi/180., garea )
        garea = garea/(4*PI*RADIUS*RADIUS)  ! scale the earth are to be 1
-       call field_size(grid_file, "aXo_file", siz)
+       call get_variable_size(grid_fileobj, "aXo_file", siz(1:2))
        nfile_axo = siz(2)
        rmask = 0.0
        do n = 1, nfile_axo
-          call read_data(grid_file, "aXo_file", axo_file, level=n)
+          call read_data(grid_fileobj, "aXo_file", axo_file, unlim_dim_level=n)
           axo_file = 'INPUT/'//trim(axo_file)
-          nxgrid = get_mosaic_xgrid_size(axo_file)
+          if ( .not. open_file(axo_fileobj, axo_file, "read")) then
+             call mpp_error(FATAL, 'ocean_model_init: error opening '//trim(axo_file))
+          endif
+
+          nxgrid = get_mosaic_xgrid_size(axo_fileobj)
           allocate(i1(nxgrid), j1(nxgrid), i2(nxgrid), j2(nxgrid), xgrid_area(nxgrid))
-          call get_mosaic_xgrid(aXo_file, i1, j1, i2, j2, xgrid_area)
+          call get_mosaic_xgrid(aXo_fileobj, i1, j1, i2, j2, xgrid_area)
           do m = 1, nxgrid
              i = i2(m); j = j2(m)
              rmask(i,j) = rmask(i,j) + xgrid_area(m)
           end do
+          call close_file(aXo_fileobj)
           deallocate(i1, j1, i2, j2, xgrid_area)
        end do
        rmask = rmask/garea
@@ -314,6 +347,7 @@ contains
     Ocean%s_surf  = 0.0
     Ocean%sea_lev = 0.0
 
+    call close_file(grid_fileobj)
  end subroutine ocean_model_init
 
 !#######################################################################
