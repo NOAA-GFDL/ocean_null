@@ -289,7 +289,7 @@ contains
        nfile_axo = siz(2)
        rmask = 0.0
        do n = 1, nfile_axo
-          call read_data(grid_fileobj, "aXo_file", axo_file, unlim_dim_level=n)
+          call read_data(grid_fileobj, "aXo_file", axo_file, corner=n)
           axo_file = 'INPUT/'//trim(axo_file)
           if ( .not. open_file(axo_fileobj, axo_file, "read")) then
              call mpp_error(FATAL, 'ocean_model_init: error opening '//trim(axo_file))
