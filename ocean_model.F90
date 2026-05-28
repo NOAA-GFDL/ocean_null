@@ -75,6 +75,7 @@ type ice_ocean_boundary_type
                                    area_berg =>NULL(), &
                                    mass_berg =>NULL()
   real, pointer, dimension(:,:) :: runoff_hflx     =>NULL() ! heat flux of liquid runoff (kg/m2/s)
+  real, pointer, dimension(:,:) :: runoff_carbon   =>NULL() ! disolved carbon flux of liquid runoff (kg/m2/s)
   real, pointer, dimension(:,:) :: calving_hflx    =>NULL() ! heat flux of frozen runoff (kg/m2/s)
   real, dimension(:,:), pointer :: p  =>NULL()
   real, dimension(:,:), pointer :: mi =>NULL()
